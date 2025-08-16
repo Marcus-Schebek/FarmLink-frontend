@@ -18,10 +18,9 @@ createRoot(document.getElementById('root')).render(
           {/* Rotas Públicas */}
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/login" element={<LoginForm />} />
-
           {/* Rota Protegida */}
           <Route
-            path="/dashboard"
+            path="/"
             element={
               <ProtectedRoute>
                 <Dashboard />
