@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  FaPaw,
   FaMoneyBillWave,
   FaChartLine,
   FaThermometerHalf,
@@ -19,16 +18,16 @@ import {
   FaClipboardList,
   FaHome,
 } from 'react-icons/fa';
+import { PiCowDuotone } from "react-icons/pi";
 import { useAuth } from '../context/AuthContext';
-import RegisterAnimalForm from './RegisterAnimalForm'; // Importação correta
+import RegisterAnimalForm from './RegisterAnimalForm'; 
+import AllAnimalsTable from './AllAnimalsTable';
 
 // --- COMPONENTES DE PLACEHOLDER ---
-const DashboardContent = () => <div className="p-8">Dashboard Overview</div>;
 const MyAnimalsList = () => <div className="p-8">Lista dos Meus Animais</div>;
 const MyMedicines = () => <div className="p-8">Seção de Meus Medicamentos</div>;
 const MySales = () => <div className="p-8">Seção de Minhas Vendas</div>;
 const MyDiets = () => <div className="p-8">Seção de Minhas Dietas</div>;
-const AllAnimals = () => <div className="p-8">Tabela de Todos os Animais</div>;
 const AllFarms = () => <div className="p-8">Tabela de Todas as Fazendas</div>;
 
 const Dashboard = () => {
@@ -40,7 +39,7 @@ const Dashboard = () => {
       case 'my_animals_list':
         return <MyAnimalsList />;
       case 'register_animal_form':
-        return <RegisterAnimalForm />; // Usando o componente importado
+        return <RegisterAnimalForm />; 
       case 'my_medicines':
         return <MyMedicines />;
       case 'my_sales':
@@ -48,7 +47,7 @@ const Dashboard = () => {
       case 'my_diets':
         return <MyDiets />;
       case 'all_animals':
-        return <AllAnimals />;
+        return <AllAnimalsTable />;
       case 'all_farms':
         return <AllFarms />;
       default:
@@ -76,7 +75,7 @@ const Dashboard = () => {
                   onClick={() => setActiveView('my_animals_list')}
                   className="w-full justify-start text-left"
                 >
-                  <FaPaw className="mr-2" /> Meus Animais
+                  <PiCowDuotone className="mr-2" /> Meus Animais
                 </Button>
               </li>
               <li>

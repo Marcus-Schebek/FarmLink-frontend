@@ -1,5 +1,3 @@
-// src/components/RegisterAnimalForm.jsx
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,45 +21,48 @@ import { FaCalendarAlt } from 'react-icons/fa';
 
 // Esquema de validação com Zod
 const formSchema = z.object({
-  name: z.string().min(2, { message: 'O nome deve ter no mínimo 2 caracteres.' }),
+  earTag: z.string().min(2, { message: 'O identificador (brinco) deve ter no mínimo 2 caracteres.' }),
   breed: z.string().min(1, { message: 'A raça é obrigatória.' }),
   birthDate: z.date({
     required_error: 'A data de nascimento é obrigatória.',
   }),
-  gender: z.enum(['Macho', 'Fêmea'], {
+  sex: z.enum(['Macho', 'Fêmea'], {
     required_error: 'O sexo é obrigatório.',
   }),
-  weight: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+  currentWeight: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
     message: 'O peso deve ser um número positivo.',
   }),
+  status: z.string().optional(),
+  productionObjective: z.string().min(1, { message: 'O tipo de produção é obrigatório.' }),
 });
 
 export default function RegisterAnimalForm() {
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      earTag: '',
       breed: '',
       birthDate: null,
-      gender: '',
-      weight: '',
+      sex: '',
+      currentWeight: '',
+      status: 'Saudável',
+      productionObjective: '',
     },
   });
 
   async function onSubmit(values) {
-    // Mapeia o valor de 'gender' para o formato esperado pelo backend
-    const genderValue = values.gender === 'Macho' ? 'M' : 'F';
+    // Mapeia os valores para o formato do banco de dados
     const submissionData = {
       ...values,
-      gender: genderValue,
-      weight: parseFloat(values.weight),
+      sex: values.sex === 'Macho' ? 'M' : 'F',
+      currentWeight: parseFloat(values.currentWeight),
     };
 
     console.log('Dados do animal prontos para envio:', submissionData);
 
-    // O restante da sua lógica de envio para a API (descomentada e adaptada)
+    // Lógica para enviar para a sua API (exemplo)
     // try {
-    //   const response = await fetch('http://localhost:3000/api/animals', {
+    //   const response = await fetch('http://localhost:3000/animals', {
     //     method: 'POST',
     //     headers: {
     //       'Content-Type': 'application/json',
@@ -69,21 +70,19 @@ export default function RegisterAnimalForm() {
     //     },
     //     body: JSON.stringify({
     //       animal: {
-    //         name: submissionData.name,
+    //         ear_tag: submissionData.earTag,
     //         breed: submissionData.breed,
+    //         sex: submissionData.sex,
     //         birth_date: submissionData.birthDate,
-    //         gender: submissionData.gender,
-    //         weight: submissionData.weight,
+    //         current_weight: submissionData.currentWeight,
+    //         status: submissionData.status,
+    //         production_objective: submissionData.productionObjective,
     //       }
     //     }),
     //   });
-    //   if (!response.ok) {
-    //     throw new Error('Falha no cadastro do animal.');
-    //   }
-    //   console.log('Animal cadastrado com sucesso!');
-    //   form.reset();
+    //   // ... (tratamento da resposta)
     // } catch (error) {
-    //   console.error(error.message);
+    //   // ... (tratamento de erro)
     // }
   }
 
@@ -97,12 +96,12 @@ export default function RegisterAnimalForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="name"
+              name="earTag"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome</FormLabel>
+                  <FormLabel>Identificador (Brinco)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome do animal" {...field} />
+                    <Input placeholder="Brinco do animal" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -155,7 +154,7 @@ export default function RegisterAnimalForm() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
-                name="gender"
+                name="sex"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Sexo</FormLabel>
@@ -176,13 +175,60 @@ export default function RegisterAnimalForm() {
               />
               <FormField
                 control={form.control}
-                name="weight"
+                name="currentWeight"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Peso (kg)</FormLabel>
+                    <FormLabel>Peso Atual (kg)</FormLabel>
                     <FormControl>
                       <Input placeholder="Peso em kg" type="number" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="productionObjective"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Produção</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Corte">Corte</SelectItem>
+                        <SelectItem value="Leite">Leite</SelectItem>
+                        <SelectItem value="Misto">Misto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Status do animal" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Saudável">Saudável</SelectItem>
+                        <SelectItem value="Doente">Doente</SelectItem>
+                        <SelectItem value="Vendido">Vendido</SelectItem>
+                        <SelectItem value="Outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
