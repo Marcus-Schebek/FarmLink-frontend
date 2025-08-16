@@ -6,20 +6,21 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // NOVO ESTADO DE CARREGAMENTO
   const navigate = useNavigate();
 
   // Efeito para verificar o token no localStorage ao carregar a página
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (token) {
-      // Nota: Em um ambiente de produção, você faria uma requisição para validar o token no backend
-      // Por enquanto, vamos assumir que a existência do token significa que o usuário está autenticado
+      // Se houver um token, o usuário está autenticado
       setIsAuthenticated(true);
-      // Você poderia decodificar o token para obter dados do usuário se necessário
+      // Aqui você poderia fazer uma requisição para obter os dados do usuário, se necessário
     }
+    // Mude o estado de loading para false após a verificação
+    setLoading(false);
   }, []);
 
-  // Função de Login que será chamada do LoginForm
   const login = async (email, password) => {
     try {
       const response = await fetch('http://localhost:3000/login', {
@@ -36,10 +37,10 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response.json();
-      localStorage.setItem('authToken', data.token); // Armazene o token JWT
+      localStorage.setItem('authToken', data.token);
       setIsAuthenticated(true);
       setUser(data.user);
-      navigate('/dashboard'); // Redireciona após o sucesso
+      navigate('/dashboard');
       return { success: true };
 
     } catch (error) {
@@ -49,7 +50,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Função de Logout
   const logout = () => {
     localStorage.removeItem('authToken');
     setIsAuthenticated(false);
@@ -64,10 +64,14 @@ export const AuthProvider = ({ children }) => {
     logout,
   };
 
+  // Se ainda estiver carregando, mostre uma tela de espera
+  if (loading) {
+    return <div>Loading...</div>; // Você pode substituir por um spinner
+  }
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Hook customizado para usar o contexto
 export const useAuth = () => {
   return useContext(AuthContext);
 };
