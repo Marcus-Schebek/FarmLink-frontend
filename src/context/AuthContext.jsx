@@ -6,22 +6,53 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // NOVO ESTADO DE CARREGAMENTO
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Efeito para verificar o token no localStorage ao carregar a página
+  // Função auxiliar para buscar os dados do usuário a partir da API
+  const fetchUserData = async (token, userId) => {
+    try {
+      if (!token || !userId) {
+        throw new Error('Token ou ID do usuário não fornecido.');
+      }
+
+      const response = await fetch(`http://localhost:3000/users/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao buscar dados do usuário.');
+      }
+
+      const userData = await response.json();
+      setUser(userData);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Erro na autenticação:', error.message);
+      logout();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Efeito para verificar o token e carregar o usuário no início
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    if (token) {
-      // Se houver um token, o usuário está autenticado
-      setIsAuthenticated(true);
-      // Aqui você poderia fazer uma requisição para obter os dados do usuário, se necessário
+    const userId = localStorage.getItem('userId'); // Armazenar e pegar o ID também
+    
+    if (token && userId) {
+      fetchUserData(token, userId);
+    } else {
+      setLoading(false);
     }
-    // Mude o estado de loading para false após a verificação
-    setLoading(false);
   }, []);
 
   const login = async (email, password) => {
+    setLoading(true);
     try {
       const response = await fetch('http://localhost:3000/login', {
         method: 'POST',
@@ -37,23 +68,28 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response.json();
+      
       localStorage.setItem('authToken', data.token);
-      setIsAuthenticated(true);
-      setUser(data.user);
+      localStorage.setItem('userId', data.user_id); // Armazena o ID explicitamente
+
+      await fetchUserData(data.token, data.user_id);
+      
       navigate('/dashboard');
       return { success: true };
-
     } catch (error) {
       console.error('Erro no login:', error.message);
       setIsAuthenticated(false);
+      setLoading(false);
       return { success: false, error: error.message };
     }
   };
 
   const logout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('userId');
     setIsAuthenticated(false);
     setUser(null);
+    setLoading(false);
     navigate('/login');
   };
 
@@ -64,9 +100,8 @@ export const AuthProvider = ({ children }) => {
     logout,
   };
 
-  // Se ainda estiver carregando, mostre uma tela de espera
   if (loading) {
-    return <div>Loading...</div>; // Você pode substituir por um spinner
+    return <div>Loading...</div>;
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

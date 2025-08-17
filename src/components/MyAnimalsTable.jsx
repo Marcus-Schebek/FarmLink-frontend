@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { AnimalFilters } from '@/components/AnimalFilters'; // Importe o novo componente
-import { AnimalsTable } from '@/components/AnimalsTable';   // Importe o novo componente
+import { AnimalFilters } from '@/components/AnimalFilters';
+import { AnimalsTable } from '@/components/AnimalsTable';
 
-export default function AllAnimalsTable() {
+export default function MyAnimalsTable() {
   const { user } = useAuth();
   const [animals, setAnimals] = useState([]);
   const [lots, setLots] = useState({});
@@ -19,14 +19,14 @@ export default function AllAnimalsTable() {
   const [productionFilter, setProductionFilter] = useState('all');
 
   useEffect(() => {
-    async function fetchAllData() {
+    async function fetchMyAnimals() {
       setLoading(true);
       setError(null);
       try {
         const token = localStorage.getItem('authToken');
         if (!token) throw new Error('Token de autenticação não encontrado.');
 
-        // 1. Busca animais
+        // 1. Busca animais e filtra pelo ID do usuário
         const animalsResponse = await fetch('http://localhost:3000/animals', {
           headers: {
             'Content-Type': 'application/json',
@@ -34,11 +34,14 @@ export default function AllAnimalsTable() {
           },
         });
         if (!animalsResponse.ok) throw new Error('Falha ao buscar animais.');
-        const animalsData = await animalsResponse.json();
-        setAnimals(animalsData);
+        const allAnimalsData = await animalsResponse.json();
+        const myAnimalsData = allAnimalsData.filter(
+          (animal) => animal.id_owner === user.id
+        );
+        setAnimals(myAnimalsData);
 
-        // 2. Lotes
-        const lotIds = [...new Set(animalsData.map((a) => a.id_lot))];
+        // 2. Lotes e 3. Donos (lógica de busca é a mesma)
+        const lotIds = [...new Set(myAnimalsData.map((a) => a.id_lot))];
         const lotDataArray = await Promise.all(
           lotIds.map((id) =>
             fetch(`http://localhost:3000/lots/${id}`, {
@@ -52,8 +55,7 @@ export default function AllAnimalsTable() {
         }, {});
         setLots(lotsMap);
 
-        // 3. Donos
-        const ownerIds = [...new Set(animalsData.map((a) => a.id_owner))];
+        const ownerIds = [...new Set(myAnimalsData.map((a) => a.id_owner))];
         const ownerDataArray = await Promise.all(
           ownerIds.map((id) =>
             fetch(`http://localhost:3000/users/${id}`, {
@@ -66,6 +68,7 @@ export default function AllAnimalsTable() {
           return acc;
         }, {});
         setOwners(ownersMap);
+
       } catch (err) {
         console.error('Erro na busca:', err.message);
         setError('Falha ao carregar os dados.');
@@ -73,7 +76,7 @@ export default function AllAnimalsTable() {
         setLoading(false);
       }
     }
-    fetchAllData();
+    fetchMyAnimals();
   }, [user]);
 
   // Aplicando filtros
