@@ -6,13 +6,12 @@ import { AnimalsTable } from '@/components/AnimalsTable';   // Importe o novo co
 export default function AllAnimalsTable() {
   const { user } = useAuth();
   const [animals, setAnimals] = useState([]);
-  const [lots, setLots] = useState({});
   const [owners, setOwners] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Filtros
-  const [weightRange, setWeightRange] = useState([0, 600]);
+  const [weightRange, setWeightRange] = useState([0, 2000]);
   const [breedFilter, setBreedFilter] = useState('');
   const [sexFilter, setSexFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -37,21 +36,7 @@ export default function AllAnimalsTable() {
         const animalsData = await animalsResponse.json();
         setAnimals(animalsData);
 
-        // 2. Lotes
-        const lotIds = [...new Set(animalsData.map((a) => a.id_lot))];
-        const lotDataArray = await Promise.all(
-          lotIds.map((id) =>
-            fetch(`http://localhost:3000/lots/${id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }).then((res) => res.json())
-          )
-        );
-        const lotsMap = lotDataArray.reduce((acc, lot) => {
-          acc[lot.id] = lot;
-          return acc;
-        }, {});
-        setLots(lotsMap);
-
+  
         // 3. Donos
         const ownerIds = [...new Set(animalsData.map((a) => a.id_owner))];
         const ownerDataArray = await Promise.all(
@@ -113,7 +98,6 @@ export default function AllAnimalsTable() {
       {/* Componente de Tabela */}
       <AnimalsTable
         animals={filteredAnimals}
-        lots={lots}
         owners={owners}
       />
     </div>

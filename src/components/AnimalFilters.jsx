@@ -25,7 +25,7 @@ export function AnimalFilters({
             value={weightRange}
             onValueChange={setWeightRange}
             min={0}
-            max={600}
+            max={2000}
             step={10}
           />
           <div className="flex justify-between text-xs mt-1">

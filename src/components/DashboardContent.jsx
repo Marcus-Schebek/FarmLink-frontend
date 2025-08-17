@@ -2,10 +2,10 @@ import React from 'react';
 import RegisterAnimalForm from './RegisterAnimalForm'; 
 import AllAnimalsTable from './AllAnimalsTable';
 import MyAnimalsTable from './MyAnimalsTable';
+import MySalesTable from './MySalesTable';
 
 // --- COMPONENTES DE PLACEHOLDER ---
 const MyMedicines = () => <div className="p-8">Seção de Meus Medicamentos</div>;
-const MySales = () => <div className="p-8">Seção de Minhas Vendas</div>;
 const MyDiets = () => <div className="p-8">Seção de Minhas Dietas</div>;
 const AllFarms = () => <div className="p-8">Tabela de Todas as Fazendas</div>;
 
@@ -19,7 +19,7 @@ const DashboardContent = ({ activeView }) => {
       case 'my_medicines':
         return <MyMedicines />;
       case 'my_sales':
-        return <MySales />;
+        return <MySalesTable />;
       case 'my_diets':
         return <MyDiets />;
       case 'all_animals':

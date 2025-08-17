@@ -34,13 +34,10 @@ export function AnimalsTable({ animals, lots, owners }) {
             <TableHead>Status</TableHead>
             <TableHead>Dono</TableHead>
             <TableHead>Telefone</TableHead>
-            <TableHead>Fazenda</TableHead>
-            <TableHead>Lote</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {animals.map((animal) => {
-            const lotInfo = lots[animal.id_lot];
             const ownerInfo = owners[animal.id_owner];
             return (
               <TableRow key={animal.id}>
@@ -53,8 +50,6 @@ export function AnimalsTable({ animals, lots, owners }) {
                 <TableCell>{animal.status}</TableCell>
                 <TableCell>{ownerInfo?.name || 'N/A'}</TableCell>
                 <TableCell>{ownerInfo?.phone || 'N/A'}</TableCell>
-                <TableCell>{lotInfo?.origin_location || 'N/A'}</TableCell>
-                <TableCell>{lotInfo?.id || 'N/A'}</TableCell>
               </TableRow>
             );
           })}

@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
 
       await fetchUserData(data.token, data.user_id);
       
-      navigate('/dashboard');
+      navigate('/');
       return { success: true };
     } catch (error) {
       console.error('Erro no login:', error.message);

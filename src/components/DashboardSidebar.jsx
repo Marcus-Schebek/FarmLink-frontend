@@ -10,12 +10,11 @@ import { Separator } from '@/components/ui/separator';
 import {
   FaSignOutAlt,
   FaPlus,
-  FaStethoscope,
   FaShoppingCart,
   FaUtensils,
   FaClipboardList,
+  FaCalendarAlt,
   FaHome,
-  FaChartLine,
 } from 'react-icons/fa';
 import { PiCowDuotone } from "react-icons/pi";
 import { ChevronRight, ChevronLeft } from 'lucide-react';
@@ -36,8 +35,8 @@ const DashboardSidebar = ({ activeView, setActiveView, isCollapsed, setIsCollaps
       view: 'register_animal_form',
     },
     {
-      label: 'Meus Medicamentos',
-      icon: <FaStethoscope size={20} />,
+      label: 'Planejamento Sanitário',
+      icon: <FaCalendarAlt size={20} />,
       view: 'my_medicines',
     },
     {
@@ -62,11 +61,6 @@ const DashboardSidebar = ({ activeView, setActiveView, isCollapsed, setIsCollaps
       label: 'Todas as Fazendas',
       icon: <FaHome size={20} />,
       view: 'all_farms',
-    },
-    {
-      label: 'Relatórios',
-      icon: <FaChartLine size={20} />,
-      view: 'reports',
     },
   ];
 

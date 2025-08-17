@@ -18,72 +18,98 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { FaCalendarAlt } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 
-// Esquema de validação com Zod
 const formSchema = z.object({
-  earTag: z.string().min(2, { message: 'O identificador (brinco) deve ter no mínimo 2 caracteres.' }),
-  breed: z.string().min(1, { message: 'A raça é obrigatória.' }),
+  earTag: z.string().min(1, "Brinco é obrigatório"),
+  breed: z.string().min(1, "Raça é obrigatória"),
   birthDate: z.date({
-    required_error: 'A data de nascimento é obrigatória.',
+    required_error: "Data de nascimento é obrigatória",
+    invalid_type_error: "Data inválida",
   }),
-  sex: z.enum(['Macho', 'Fêmea'], {
-    required_error: 'O sexo é obrigatório.',
+  sex: z.enum(["Macho", "Fêmea"], {
+    errorMap: () => ({ message: "Selecione o sexo" }),
   }),
-  currentWeight: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-    message: 'O peso deve ser um número positivo.',
+  currentWeight: z
+    .string()
+    .min(1, "Peso é obrigatório")
+    .refine((val) => !isNaN(parseFloat(val)), {
+      message: "Peso deve ser numérico",
+    }),
+  status: z.enum(["Saudável", "Doente", "Vendido", "Outro"], {
+    errorMap: () => ({ message: "Selecione o status" }),
   }),
-  status: z.string().optional(),
-  productionObjective: z.string().min(1, { message: 'O tipo de produção é obrigatório.' }),
+  productionObjective: z.enum(["Corte", "Leite", "Misto"], {
+    errorMap: () => ({ message: "Selecione o objetivo de produção" }),
+  }),
 });
 
 export default function RegisterAnimalForm() {
+  const { user } = useAuth(); 
+  const token = localStorage.getItem('authToken');
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       earTag: '',
       breed: '',
-      birthDate: null,
-      sex: '',
+      birthDate: undefined,
+      sex: undefined,
       currentWeight: '',
       status: 'Saudável',
-      productionObjective: '',
+      productionObjective: undefined,
     },
   });
 
   async function onSubmit(values) {
-    // Mapeia os valores para o formato do banco de dados
-    const submissionData = {
-      ...values,
-      sex: values.sex === 'Macho' ? 'M' : 'F',
-      currentWeight: parseFloat(values.currentWeight),
-    };
+    if (!user || !token) {
+      toast.error('Erro de autenticação', {
+        description: 'Usuário não autenticado ou token ausente. Faça login novamente.',
+      });
+      return;
+    }
 
-    console.log('Dados do animal prontos para envio:', submissionData);
+    try {
+      const submissionData = {
+        ear_tag: values.earTag,
+        breed: values.breed,
+        sex: values.sex === 'Macho' ? 'M' : 'F',
+        birth_date: values.birthDate
+          ? values.birthDate.toISOString().split('T')[0]
+          : null,
+        current_weight: parseFloat(values.currentWeight),
+        status: values.status,
+        production_objective: values.productionObjective,
+        id_owner: user.id, 
+        id_lot: 1,
+      };
 
-    // Lógica para enviar para a sua API (exemplo)
-    // try {
-    //   const response = await fetch('http://localhost:3000/animals', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //       'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-    //     },
-    //     body: JSON.stringify({
-    //       animal: {
-    //         ear_tag: submissionData.earTag,
-    //         breed: submissionData.breed,
-    //         sex: submissionData.sex,
-    //         birth_date: submissionData.birthDate,
-    //         current_weight: submissionData.currentWeight,
-    //         status: submissionData.status,
-    //         production_objective: submissionData.productionObjective,
-    //       }
-    //     }),
-    //   });
-    //   // ... (tratamento da resposta)
-    // } catch (error) {
-    //   // ... (tratamento de erro)
-    // }
+      const response = await fetch('http://localhost:3000/animals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(submissionData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao registrar o animal.');
+      }
+
+      toast.success('Animal Cadastrado', {
+        description: `O animal com brinco ${values.earTag} foi cadastrado com sucesso.`,
+      });
+
+      form.reset();
+    } catch (error) {
+      console.error('Erro no cadastro:', error);
+      toast.error('Erro no Cadastro', {
+        description: error.message || 'Ocorreu um erro inesperado. Tente novamente.',
+      });
+    }
   }
 
   return (
@@ -93,7 +119,10 @@ export default function RegisterAnimalForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-6"
+          >
             <FormField
               control={form.control}
               name="earTag"
@@ -158,7 +187,7 @@ export default function RegisterAnimalForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Sexo</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o sexo" />
@@ -194,7 +223,7 @@ export default function RegisterAnimalForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Produção</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o tipo" />
@@ -216,7 +245,7 @@ export default function RegisterAnimalForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Status do animal" />
