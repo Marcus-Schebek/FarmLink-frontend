@@ -105,7 +105,7 @@ const DietForm = React.memo(({
 
 export default function MyDiets() {
   const { animals } = useAnimals()
-  const { myDiets, fetchDiets } = useDiets()
+  const { myDiets, fetchMyDiets } = useDiets()
   const [open, setOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [currentDietId, setCurrentDietId] = useState(null)
@@ -245,7 +245,7 @@ export default function MyDiets() {
 
       setOpen(false)
       resetForm()
-      fetchDiets() // Atualiza a lista de dietas automaticamente
+      fetchMyDiets() // Atualiza a lista de dietas automaticamente
     } catch (err) {
       console.error(err)
       toast.error(`Erro ao ${isEditing ? 'atualizar' : 'criar'} a dieta`)
@@ -253,7 +253,7 @@ export default function MyDiets() {
   }, [
     alimentType, costKg, nutrients, selectedAnimals, dateBeginning, 
     dateEnd, dailyQuantity, isEditing, currentDietId, currentAssignmentId, 
-    resetForm, fetchDiets
+    resetForm, fetchMyDiets
   ])
 
   const handleEditDiet = useMemo(() => (diet, assignment) => {
@@ -281,12 +281,12 @@ export default function MyDiets() {
       if (!res.ok) throw new Error("Erro ao deletar dieta")
 
       toast.success("Dieta deletada com sucesso!")
-      fetchDiets() // Atualiza a lista após deletar
+      fetchMyDiets() // Atualiza a lista após deletar
     } catch (err) {
       console.error(err)
       toast.error("Erro ao deletar dieta")
     }
-  }, [fetchDiets])
+  }, [fetchMyDiets])
 
   const memoizedForm = useMemo(() => (
     <DietForm

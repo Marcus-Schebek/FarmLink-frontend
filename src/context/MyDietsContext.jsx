@@ -88,6 +88,7 @@ export function DietProvider({ children }) {
         nutrients: diet.nutrients ?? "",
         animals, // [{id, ear_tag}]
         assignments_count: assignments.length,
+        assignments,
       }));
 
       setMyDiets(normalized);
