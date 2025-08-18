@@ -99,6 +99,7 @@ export default function AllAnimalsTable() {
       <AnimalsTable
         animals={filteredAnimals}
         owners={owners}
+        showOwners={true}
       />
     </div>
   );

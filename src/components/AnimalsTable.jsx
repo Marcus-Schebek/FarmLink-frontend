@@ -2,7 +2,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 
-export function AnimalsTable({ animals, owners, onDeleteAnimal, showActions = false }) {
+export function AnimalsTable({ animals, owners, onDeleteAnimal, showActions = false, showOwners = false }) {
   return (
     <div className="mt-8 overflow-x-auto">
       <Table>
@@ -15,6 +15,12 @@ export function AnimalsTable({ animals, owners, onDeleteAnimal, showActions = fa
             <TableHead>Peso</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Produção</TableHead>
+            {showOwners && (
+              <>
+                <TableHead>Dono</TableHead>
+                <TableHead>Contato</TableHead>
+              </>
+            )}
             {showActions && <TableHead className="text-right">Ações</TableHead>}
           </TableRow>
         </TableHeader>
@@ -28,6 +34,12 @@ export function AnimalsTable({ animals, owners, onDeleteAnimal, showActions = fa
               <TableCell>{animal.current_weight} kg</TableCell>
               <TableCell>{animal.status}</TableCell>
               <TableCell>{animal.production_objective}</TableCell>
+              {showOwners && (
+              <>
+              <TableCell>{owners[animal.id_owner]?.name || '—'}</TableCell>
+              <TableCell>{owners[animal.id_owner]?.phone || '—'}</TableCell>
+              </>
+            )}
               {showActions && (
                 <TableCell className="text-right">
                   <Button 
