@@ -1,82 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { AnimalFilters } from '@/components/AnimalFilters';
-import { AnimalsTable } from '@/components/AnimalsTable';
+import React, { useState } from "react";
+import { useAnimals } from "../context/MyAnimalsContext";
+import { AnimalFilters } from "@/components/AnimalFilters";
+import { AnimalsTable } from "@/components/AnimalsTable";
 
 export default function MyAnimalsTable() {
-  const { user } = useAuth();
-  const [animals, setAnimals] = useState([]);
-  const [owners, setOwners] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { animals, owners, loading, error, deleteAnimal } = useAnimals();
 
-  // Filtros
+  // Filtros locais
   const [weightRange, setWeightRange] = useState([0, 2000]);
-  const [breedFilter, setBreedFilter] = useState('');
-  const [sexFilter, setSexFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [productionFilter, setProductionFilter] = useState('all');
-
-  useEffect(() => {
-    async function fetchMyAnimals() {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem('authToken');
-        if (!token) throw new Error('Token de autenticação não encontrado.');
-
-        // 1. Busca animais e filtra pelo ID do usuário
-        const animalsResponse = await fetch('http://localhost:3000/animals', {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!animalsResponse.ok) throw new Error('Falha ao buscar animais.');
-        const allAnimalsData = await animalsResponse.json();
-        const myAnimalsData = allAnimalsData.filter(
-          (animal) => animal.id_owner === user.id
-        );
-        setAnimals(myAnimalsData);
-
-
-        const ownerIds = [...new Set(myAnimalsData.map((a) => a.id_owner))];
-        const ownerDataArray = await Promise.all(
-          ownerIds.map((id) =>
-            fetch(`http://localhost:3000/users/${id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }).then((res) => res.json())
-          )
-        );
-        const ownersMap = ownerDataArray.reduce((acc, owner) => {
-          acc[owner.id] = owner;
-          return acc;
-        }, {});
-        setOwners(ownersMap);
-
-      } catch (err) {
-        console.error('Erro na busca:', err.message);
-        setError('Falha ao carregar os dados.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchMyAnimals();
-  }, [user]);
+  const [breedFilter, setBreedFilter] = useState("");
+  const [sexFilter, setSexFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [productionFilter, setProductionFilter] = useState("all");
 
   // Aplicando filtros
   const filteredAnimals = animals.filter((animal) => {
     const matchesWeight =
-      animal.current_weight >= weightRange[0] && animal.current_weight <= weightRange[1];
+      animal.current_weight >= weightRange[0] &&
+      animal.current_weight <= weightRange[1];
     const matchesBreed =
-      breedFilter.trim() === '' ||
+      breedFilter.trim() === "" ||
       animal.breed.toLowerCase().includes(breedFilter.toLowerCase());
-    const matchesSex = sexFilter === 'all' || animal.sex === sexFilter;
-    const matchesStatus = statusFilter === 'all' || animal.status === statusFilter;
+    const matchesSex = sexFilter === "all" || animal.sex === sexFilter;
+    const matchesStatus =
+      statusFilter === "all" || animal.status === statusFilter;
     const matchesProduction =
-      productionFilter === 'all' || animal.production_objective === productionFilter;
+      productionFilter === "all" ||
+      animal.production_objective === productionFilter;
 
-    return matchesWeight && matchesBreed && matchesSex && matchesStatus && matchesProduction;
+    return (
+      matchesWeight &&
+      matchesBreed &&
+      matchesSex &&
+      matchesStatus &&
+      matchesProduction
+    );
   });
 
   if (loading) return <div className="p-8 text-center">Carregando dados...</div>;
@@ -84,7 +42,6 @@ export default function MyAnimalsTable() {
 
   return (
     <div className="p-4">
-      {/* Componente de Filtros */}
       <AnimalFilters
         weightRange={weightRange}
         setWeightRange={setWeightRange}
@@ -97,11 +54,12 @@ export default function MyAnimalsTable() {
         productionFilter={productionFilter}
         setProductionFilter={setProductionFilter}
       />
-      
-      {/* Componente de Tabela */}
+
       <AnimalsTable
         animals={filteredAnimals}
         owners={owners}
+        onDeleteAnimal={deleteAnimal}
+        showActions={true}
       />
     </div>
   );

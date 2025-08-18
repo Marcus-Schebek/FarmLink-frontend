@@ -3,10 +3,10 @@ import RegisterAnimalForm from './RegisterAnimalForm';
 import AllAnimalsTable from './AllAnimalsTable';
 import MyAnimalsTable from './MyAnimalsTable';
 import MySalesTable from './MySalesTable';
+import MyDiets from './MyDiets';
 
 // --- COMPONENTES DE PLACEHOLDER ---
 const MyMedicines = () => <div className="p-8">Seção de Meus Medicamentos</div>;
-const MyDiets = () => <div className="p-8">Seção de Minhas Dietas</div>;
 const AllFarms = () => <div className="p-8">Tabela de Todas as Fazendas</div>;
 
 const DashboardContent = ({ activeView }) => {

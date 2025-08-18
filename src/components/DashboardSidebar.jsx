@@ -57,11 +57,6 @@ const DashboardSidebar = ({ activeView, setActiveView, isCollapsed, setIsCollaps
       icon: <FaClipboardList size={20} />,
       view: 'all_animals',
     },
-    {
-      label: 'Todas as Fazendas',
-      icon: <FaHome size={20} />,
-      view: 'all_farms',
-    },
   ];
 
   const renderSidebarItem = (item) => {
