@@ -142,87 +142,44 @@ export default function MyDiets() {
     setCurrentAssignmentId(null)
   }, [])
 
-  const handleSubmit = useMemo(() => async () => {
-    if (!alimentType || !costKg || !nutrients || selectedAnimals.length === 0) {
-      toast.error("Preencha todos os campos e selecione pelo menos um animal")
-      return
-    }
+const handleSubmit = useMemo(() => async () => {
+  if (!alimentType || !costKg || !nutrients || selectedAnimals.length === 0) {
+    toast.error("Preencha todos os campos e selecione pelo menos um animal")
+    return
+  }
 
-    try {
-      const token = localStorage.getItem("authToken")
+  try {
+    const token = localStorage.getItem("authToken")
 
-      if (isEditing && currentDietId) {
-        // Atualizar dieta existente (PUT)
-        const dietResponse = await fetch(`http://localhost:3000/diets/${currentDietId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            aliment_type: alimentType,
-            cost_kg: parseFloat(costKg),
-            nutrients,
-          }),
-        })
+    if (isEditing && currentDietId) {
+      // Atualizar dieta
+      const dietResponse = await fetch(`http://localhost:3000/diets/${currentDietId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          aliment_type: alimentType,
+          cost_kg: parseFloat(costKg),
+          nutrients,
+        }),
+      })
 
-        if (!dietResponse.ok) throw new Error("Erro ao atualizar a dieta")
+      if (!dietResponse.ok) throw new Error("Erro ao atualizar a dieta")
 
-        // Atualizar vínculo dieta-animal (PUT se existir assignmentId, senão POST)
-        if (currentAssignmentId) {
-          await fetch(`http://localhost:3000/animal_diets/${currentAssignmentId}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              id_animal: selectedAnimals[0], // Assumindo um animal por edição para simplificar
-              id_diet: currentDietId,
-              date_beginning: dateBeginning,
-              date_end: dateEnd,
-              daily_quantity: parseFloat(dailyQuantity),
-            }),
-          })
-        } else {
-          await fetch("http://localhost:3000/animal_diets", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              id_animal: selectedAnimals[0],
-              id_diet: currentDietId,
-              date_beginning: dateBeginning,
-              date_end: dateEnd,
-              daily_quantity: parseFloat(dailyQuantity),
-            }),
-          })
-        }
+      // Buscar assignments atuais da dieta no backend
+      const assignmentsRes = await fetch(`http://localhost:3000/animal_diets?diet_id=${currentDietId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const currentAssignments = await assignmentsRes.json()
+      const currentAnimalIds = currentAssignments.map(a => String(a.id_animal))
 
-        toast.success("Dieta atualizada com sucesso!")
-      } else {
-        // Criar nova dieta (POST)
-        const dietResponse = await fetch("http://localhost:3000/diets", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            aliment_type: alimentType,
-            cost_kg: parseFloat(costKg),
-            nutrients,
-          }),
-        })
-
-        if (!dietResponse.ok) throw new Error("Erro ao criar a dieta")
-        const diet = await dietResponse.json()
-
-        // Criar vínculos dieta-animal
-        await Promise.all(
-          selectedAnimals.map((animalId) =>
+      // Criar assignments para animais novos
+      await Promise.all(
+        selectedAnimals
+          .filter(animalId => !currentAnimalIds.includes(animalId))
+          .map(animalId =>
             fetch("http://localhost:3000/animal_diets", {
               method: "POST",
               headers: {
@@ -231,44 +188,138 @@ export default function MyDiets() {
               },
               body: JSON.stringify({
                 id_animal: animalId,
-                id_diet: diet.id,
+                id_diet: currentDietId,
                 date_beginning: dateBeginning,
                 date_end: dateEnd,
                 daily_quantity: parseFloat(dailyQuantity),
               }),
             })
           )
+      )
+
+      // Atualizar assignments já existentes
+      await Promise.all(
+        currentAssignments
+          .filter(a => selectedAnimals.includes(String(a.id_animal)))
+          .map(a =>
+            fetch(`http://localhost:3000/animal_diets/${a.id}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                id_animal: a.id_animal,
+                id_diet: currentDietId,
+                date_beginning: dateBeginning,
+                date_end: dateEnd,
+                daily_quantity: parseFloat(dailyQuantity),
+              }),
+            })
+          )
+      )
+
+      // Remover assignments de animais desmarcados
+      await Promise.all(
+        currentAssignments
+          .filter(a => !selectedAnimals.includes(String(a.id_animal)))
+          .map(a =>
+            fetch(`http://localhost:3000/animal_diets/${a.id}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          )
+      )
+
+      toast.success("Dieta atualizada com sucesso!")
+    } else {
+      // Criar nova dieta
+      const dietResponse = await fetch("http://localhost:3000/diets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          aliment_type: alimentType,
+          cost_kg: parseFloat(costKg),
+          nutrients,
+        }),
+      })
+
+      if (!dietResponse.ok) throw new Error("Erro ao criar a dieta")
+      const diet = await dietResponse.json()
+
+      // Criar vínculos com todos os animais selecionados
+      await Promise.all(
+        selectedAnimals.map((animalId) =>
+          fetch("http://localhost:3000/animal_diets", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              id_animal: animalId,
+              id_diet: diet.id,
+              date_beginning: dateBeginning,
+              date_end: dateEnd,
+              daily_quantity: parseFloat(dailyQuantity),
+            }),
+          })
         )
+      )
 
-        toast.success("Dieta criada com sucesso!")
-      }
-
-      setOpen(false)
-      resetForm()
-      fetchMyDiets() // Atualiza a lista de dietas automaticamente
-    } catch (err) {
-      console.error(err)
-      toast.error(`Erro ao ${isEditing ? 'atualizar' : 'criar'} a dieta`)
+      toast.success("Dieta criada com sucesso!")
     }
-  }, [
-    alimentType, costKg, nutrients, selectedAnimals, dateBeginning, 
-    dateEnd, dailyQuantity, isEditing, currentDietId, currentAssignmentId, 
-    resetForm, fetchMyDiets
-  ])
 
-  const handleEditDiet = useMemo(() => (diet, assignment) => {
-    setAlimentType(diet.aliment_type)
-    setCostKg(String(diet.cost_kg))
-    setNutrients(diet.nutrients)
-    setSelectedAnimals([String(assignment.id_animal)]) // Assumindo edição de um animal por vez
-    setDateBeginning(assignment.date_beginning || "")
-    setDateEnd(assignment.date_end || "")
-    setDailyQuantity(String(assignment.daily_quantity || ""))
-    setIsEditing(true)
+    setOpen(false)
+    resetForm()
+    fetchMyDiets() // força atualizar tabela
+  } catch (err) {
+    console.error(err)
+    toast.error(`Erro ao ${isEditing ? "atualizar" : "criar"} a dieta`)
+  }
+}, [
+  alimentType, costKg, nutrients, selectedAnimals, 
+  dateBeginning, dateEnd, dailyQuantity, 
+  isEditing, currentDietId, resetForm, fetchMyDiets
+])
+
+
+const handleEditDiet = async (diet) => {
+  try {
+    const token = localStorage.getItem("authToken")
+
+    // Buscar todos os vínculos animal_diets dessa dieta
+    const assignmentsRes = await fetch(`http://localhost:3000/animal_diets?diet_id=${diet.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const assignments = await assignmentsRes.json()
+
+    // Atualizar estados do form
     setCurrentDietId(diet.id)
-    setCurrentAssignmentId(assignment.id || null)
+    setAlimentType(diet.aliment_type)
+    setCostKg(diet.cost_kg)
+    setNutrients(diet.nutrients)
+
+    // Aqui pega todos os animais já vinculados e preenche no MultiSelect
+    setSelectedAnimals(assignments.map(a => String(a.id_animal)))
+
+    // Se quiser popular os outros campos do assignment, pegue do primeiro só como base
+    if (assignments.length > 0) {
+      setDateBeginning(assignments[0].date_beginning)
+      setDateEnd(assignments[0].date_end)
+      setDailyQuantity(assignments[0].daily_quantity)
+    }
+
+    setIsEditing(true)
     setOpen(true)
-  }, [])
+  } catch (err) {
+    console.error("Erro ao carregar dieta para edição:", err)
+    toast.error("Erro ao carregar dieta para edição")
+  }
+}
 
   const handleDeleteDiet = useMemo(() => async (dietId) => {
     try {
