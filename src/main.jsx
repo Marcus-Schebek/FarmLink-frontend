@@ -6,6 +6,7 @@ import './index.css';
 import { AuthProvider } from './context/AuthContext';import ProtectedRoute from './components/ProtectedRoute';
 import {MyAnimalsProvider} from './context/MyAnimalsContext';
 import { DietProvider } from './context/MyDietsContext';
+import { SalesProvider } from './context/SalesContext';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import Dashboard from './components/Dashboard';
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <MyAnimalsProvider>
+          <SalesProvider>
           <DietProvider>
           <Routes>
           {/* Rotas Públicas */}
@@ -31,6 +33,7 @@ createRoot(document.getElementById('root')).render(
             />
         </Routes>
             </DietProvider>
+          </SalesProvider>
         </MyAnimalsProvider>
       </AuthProvider>
     </BrowserRouter>
