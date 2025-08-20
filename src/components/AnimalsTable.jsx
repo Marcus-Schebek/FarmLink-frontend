@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "../context/AuthContext"; // supondo que você tenha um contexto de auth
+import { useAuth } from "../context/AuthContext";
 
 export function AnimalsTable({ animals, owners, onDeleteAnimal, showOwners = false, isAllAnimals = false }) {
   const { user, authToken } = useAuth(); 
@@ -18,71 +18,75 @@ export function AnimalsTable({ animals, owners, onDeleteAnimal, showOwners = fal
     setOpenDrawer(true);
   };
 
-const handleBuyAnimal = async () => {
-  console.log("O botão é chamado")
-  if (!user || !selectedAnimal) return console.log("Usuário ou animal não selecionado", user, selectedAnimal);
-  const token = localStorage.getItem("authToken")
-  try {
-    // 1) Criar a venda
-    const saleRes = await fetch("http://localhost:3000/sales", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-          sale_date: new Date().toISOString(),
-          total_value: parseFloat(totalValue),
-          payment_method: paymentMethod,
-          id_seller: selectedAnimal.id_owner,
-          id_buyer: user.id,
-      }),
-    });
+  // Filtrar animais quando isAllAnimals for true
+  const filteredAnimals = isAllAnimals 
+    ? animals.filter(animal => animal.id_owner !== user?.id)
+    : animals;
 
-    if (!saleRes.ok) throw new Error("Erro ao criar venda");
-    const sale = await saleRes.json();
+  const handleBuyAnimal = async () => {
+    console.log("O botão é chamado")
+    if (!user || !selectedAnimal) return console.log("Usuário ou animal não selecionado", user, selectedAnimal);
+    const token = localStorage.getItem("authToken")
+    try {
+      // 1) Criar a venda
+      const saleRes = await fetch("http://localhost:3000/sales", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+            sale_date: new Date().toISOString(),
+            total_value: parseFloat(totalValue),
+            payment_method: paymentMethod,
+            id_seller: selectedAnimal.id_owner,
+            id_buyer: user.id,
+        }),
+      });
 
-    // 2) Relacionar animal à venda
-    const saRes = await fetch("http://localhost:3000/sale_animals", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-          id_sale: sale.id,
-          id_animal: selectedAnimal.id,
-      }),
-    });
+      if (!saleRes.ok) throw new Error("Erro ao criar venda");
+      const sale = await saleRes.json();
 
-    if (!saRes.ok) throw new Error("Erro ao vincular animal à venda");
+      // 2) Relacionar animal à venda
+      const saRes = await fetch("http://localhost:3000/sale_animals", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+            id_sale: sale.id,
+            id_animal: selectedAnimal.id,
+        }),
+      });
 
-    // 3) Atualizar dono do animal (agora com Authorization!)
-    const updateRes = await fetch(`http://localhost:3000/animals/${selectedAnimal.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, 
-      },
-      body: JSON.stringify({
-          ...selectedAnimal,
-          id_owner: user.id,
-      }),
-    });
+      if (!saRes.ok) throw new Error("Erro ao vincular animal à venda");
 
-    if (!updateRes.ok) throw new Error("Erro ao atualizar dono do animal");
+      // 3) Atualizar dono do animal
+      const updateRes = await fetch(`http://localhost:3000/animals/${selectedAnimal.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, 
+        },
+        body: JSON.stringify({
+            ...selectedAnimal,
+            id_owner: user.id,
+        }),
+      });
 
-    alert("Compra realizada com sucesso!");
-    setOpenDrawer(false);
-    setSelectedAnimal(null);
-    setTotalValue("");
-    setPaymentMethod("");
-  } catch (error) {
-    console.error("Erro na compra:", error);
-    alert("Erro ao realizar compra.");
-  }
-};
+      if (!updateRes.ok) throw new Error("Erro ao atualizar dono do animal");
 
+      alert("Compra realizada com sucesso!");
+      setOpenDrawer(false);
+      setSelectedAnimal(null);
+      setTotalValue("");
+      setPaymentMethod("");
+    } catch (error) {
+      console.error("Erro na compra:", error);
+      alert("Erro ao realizar compra.");
+    }
+  };
 
   return (
     <div className="mt-8 overflow-x-auto">
@@ -106,7 +110,7 @@ const handleBuyAnimal = async () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {animals.map((animal) => (
+          {filteredAnimals.map((animal) => (
             <TableRow key={animal.id}>
               <TableCell className="font-medium">{animal.ear_tag}</TableCell>
               <TableCell>{animal.breed}</TableCell>
@@ -140,6 +144,13 @@ const handleBuyAnimal = async () => {
           ))}
         </TableBody>
       </Table>
+
+      {/* Mensagem quando não há animais para comprar */}
+      {isAllAnimals && filteredAnimals.length === 0 && (
+        <div className="text-center p-8 text-gray-500">
+          Não há animais disponíveis para compra no momento.
+        </div>
+      )}
 
       {/* Drawer de compra */}
       <Drawer open={openDrawer} onOpenChange={setOpenDrawer}>
