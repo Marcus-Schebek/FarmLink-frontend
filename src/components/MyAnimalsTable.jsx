@@ -59,7 +59,7 @@ export default function MyAnimalsTable() {
         animals={filteredAnimals}
         owners={owners}
         onDeleteAnimal={deleteAnimal}
-        showActions={true}
+        isAllAnimals={false}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { AnimalFilters } from '@/components/AnimalFilters'; // Importe o novo componente
-import { AnimalsTable } from '@/components/AnimalsTable';   // Importe o novo componente
+import { AnimalFilters } from '@/components/AnimalFilters'; 
+import { AnimalsTable } from '@/components/AnimalsTable';   
 
 export default function AllAnimalsTable() {
   const { user } = useAuth();
@@ -100,6 +100,7 @@ export default function AllAnimalsTable() {
         animals={filteredAnimals}
         owners={owners}
         showOwners={true}
+        isAllAnimals={true}
       />
     </div>
   );
